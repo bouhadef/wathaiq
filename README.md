@@ -21,7 +21,7 @@
 
 ## النشر
 
-كل دفع (`push`) إلى الفرع `main` يعيد نشر الموقع تلقائيًا (ملف `.github/workflows/pages.yml`)، وهو يولّد `files.json` بتشغيل `node scripts/build-index.mjs`. لتجربة الفهرس محليًا شغّل الأمر نفسه ثم قدّم المجلد بأي خادم ثابت.
+كل دفع (`push`) إلى الفرع `main` يعيد نشر الموقع تلقائيًا (ملف `.github/workflows/pages.yml`)، وهو يولّد `files.json` بتشغيل `node scripts/build-index.mjs`. للمعاينة محليًا شغّل الأمر نفسه ثم `node scripts/serve.mjs` وافتح `http://localhost:4173/`.
 
 عند أول نشر: في إعدادات المستودع على GitHub، Pages، اختر Source: GitHub Actions.
 

@@ -4,9 +4,9 @@ export const config = {
   title: 'الوثائق التربوية',
   subtitle: 'الأستاذ بوهادف · رياضيات · 2026-2027',
   sections: [
-    { id: 'nosos', title: 'دفاتر النصوص', note: 'مجلد فرعي لكل قسم' },
+    { id: 'nosos', title: 'دفاتر النصوص', note: 'دفتر لكل قسم' },
     { id: 'yawmi', title: 'الكراس اليومي', note: '' },
-    { id: 'tanqit', title: 'دفتر التنقيط', note: 'مجلد فرعي لكل قسم، وكل ملف تقويم واحد' },
+    { id: 'tanqit', title: 'دفتر التنقيط', note: 'كل تقويم لكل قسم في ملف' },
     { id: 'mokhatatat', title: 'المخططات السنوية', note: '' },
   ],
 };

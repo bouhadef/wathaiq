@@ -44,6 +44,8 @@ async function loadIndex() {
 const sectionConf = (id) => config.sections.find((s) => s.id === id);
 const sectionData = (id) => index.sections.find((s) => s.id === id);
 const countFiles = (s) => s.groups.reduce((n, g) => n + g.files.length, 0);
+const countLabel = (n) =>
+  n === 0 ? 'لا توجد ملفات بعد' : n === 1 ? 'ملف واحد' : n === 2 ? 'ملفان' : `${nf.format(n)} ${n <= 10 ? 'ملفات' : 'ملفًا'}`;
 
 function setScreen(...nodes) {
   if (viewerCleanup) {
@@ -87,7 +89,7 @@ function renderHome() {
       el('a', { class: 'card', href: `#/s/${sc.id}` },
         el('span', { class: 'card-title', text: sc.title }),
         sc.note ? el('span', { class: 'card-note', text: sc.note }) : null,
-        el('span', { class: 'card-count', text: n === 0 ? 'لا توجد ملفات بعد' : `${nf.format(n)} ملف` }))));
+        el('span', { class: 'card-count', text: countLabel(n) }))));
   }
 
   const results = el('ul', { class: 'files', hidden: true });

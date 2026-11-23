@@ -2,3 +2,4 @@ files.json
 _site/
 node_modules/
 الوارد/
+.claude/
