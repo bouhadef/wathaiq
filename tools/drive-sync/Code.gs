@@ -21,6 +21,10 @@ const CONFIG = {
     tanqit: '1aNvhqU_VolpWe7e6gHklfD17sDNw8GiW', // دفتر التنقيط
     mokhatatat: '1--v9e8ySuGqMF4ua5LjA7l7edWGRZui1', // المخططات السنوية
   },
+  // Sections whose files are added under their exact name. In the other sections a file is
+  // updated by name: a browser's download suffix ("name (1).pdf") is dropped, so a file that
+  // was downloaded again replaces its older version instead of appearing beside it.
+  exactNameSections: ['tanqit'],
   everyMinutes: 15, // Apps Script accepts 1, 5, 10, 15 or 30
   maxFileBytes: 30 * 1024 * 1024,
 };
@@ -134,32 +138,38 @@ function listDrivePdfs_() {
   for (const section of Object.keys(CONFIG.sections)) {
     const folder = DriveApp.getFolderById(CONFIG.sections[section]); // throws when the folder is gone
     if (folder.isTrashed()) throw new Error('The Drive folder of section "' + section + '" is in the trash.');
-    walk_(folder, 'docs/' + section, wanted);
+    walk_(folder, 'docs/' + section, wanted, CONFIG.exactNameSections.indexOf(section) === -1);
   }
   return wanted;
 }
 
-function walk_(folder, prefix, wanted) {
+function walk_(folder, prefix, wanted, dropCopySuffix) {
   const files = folder.getFilesByType(MimeType.PDF);
   while (files.hasNext()) {
     const file = files.next();
     if (file.isTrashed()) continue;
-    const path = prefix + '/' + cleanName_(file.getName(), true);
+    const path = prefix + '/' + cleanName_(file.getName(), true, dropCopySuffix);
     const other = wanted.get(path);
-    // Two files with the same name in one folder: the most recent one is shown.
-    if (!other || file.getLastUpdated().getTime() > other.getLastUpdated().getTime()) wanted.set(path, file);
+    // Several files with the same name in one folder: the one put there last is the current version.
+    if (!other || newness_(file) > newness_(other)) wanted.set(path, file);
   }
   const folders = folder.getFolders();
   while (folders.hasNext()) {
     const sub = folders.next();
-    if (!sub.isTrashed()) walk_(sub, prefix + '/' + cleanName_(sub.getName(), false), wanted);
+    if (!sub.isTrashed()) walk_(sub, prefix + '/' + cleanName_(sub.getName(), false), wanted, dropCopySuffix);
   }
 }
 
+/** When the file arrived in Drive or was last replaced there, whichever is later. */
+function newness_(file) {
+  return Math.max(file.getDateCreated().getTime(), file.getLastUpdated().getTime());
+}
+
 /** A name that is valid in a git path and on Windows, where the repository is also checked out. */
-function cleanName_(name, isFile) {
+function cleanName_(name, isFile, dropCopySuffix) {
   let n = String(name).replace(/[\\/:*?"<>|\u0000-\u001f]/g, '-').replace(/\s+/g, ' ').trim();
   if (isFile) n = n.replace(/\.pdf$/i, '');
+  if (isFile && dropCopySuffix) n = n.replace(/ \(\d{1,2}\)$/, ''); // "(1)".."(99)", not a year like "(2026)"
   n = n.replace(/[. ]+$/, '');
   if (n === '' || n === '.git') n = 'بدون اسم';
   return isFile ? n + '.pdf' : n;

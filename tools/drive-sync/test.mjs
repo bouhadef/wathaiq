@@ -18,8 +18,9 @@ const gitSha = (buf) => createHash('sha1').update(`blob ${buf.length}\0`).update
 // ---- fake Drive ----
 let clock = 1000;
 const mkFile = (name, content, opts = {}) => ({
-  name, buf: Buffer.from(content), id: 'id' + ++clock, updated: ++clock, trashed: false, size: opts.size,
+  name, buf: Buffer.from(content), id: 'id' + ++clock, created: ++clock, updated: opts.updated ?? ++clock, trashed: false, size: opts.size,
   getName() { return this.name; }, getId() { return this.id; }, isTrashed() { return this.trashed; },
+  getDateCreated() { return new Date(this.created); },
   getLastUpdated() { return new Date(this.updated); }, getSize() { return this.size ?? this.buf.length; },
   getBlob() { downloads++; return { getBytes: () => signed(this.buf) }; },
 });
@@ -122,6 +123,11 @@ assert.equal(call('cleanName_("a/b:c?.pdf", true)'), 'a-b-c-.pdf');
 assert.equal(call('cleanName_("بلا امتداد", true)'), 'بلا امتداد.pdf');
 assert.equal(call('cleanName_("  1م1 . ", false)'), '1م1');
 assert.equal(call('cleanName_("..", false)'), 'بدون اسم');
+assert.equal(call('cleanName_("daftar_nusus_1م1 (1).pdf", true, true)'), 'daftar_nusus_1م1.pdf');
+assert.equal(call('cleanName_("daftar_nusus_1م1 (12).PDF", true, true)'), 'daftar_nusus_1م1.pdf');
+assert.equal(call('cleanName_("الفرض (2).pdf", true, false)'), 'الفرض (2).pdf', 'exact-name sections keep the suffix');
+assert.equal(call('cleanName_("خطة (2026).pdf", true, true)'), 'خطة (2026).pdf', 'a year is not a copy suffix');
+assert.equal(call('cleanName_("1م1 (2)", false, true)'), '1م1 (2)', 'folder names are never shortened');
 console.log('ok  cleanName_');
 
 // 3. First run: Drive already holds exactly what the site has -> no commit, other repo files untouched.
@@ -193,15 +199,43 @@ assert.equal(repoFiles().get('docs/nosos/دفتر النصوص 1م1.pdf'), gitSh
 assert.equal(repoFiles().has('docs/mokhatatat/كبير.pdf'), false);
 console.log('ok  duplicate names and too-large files');
 
+// 8b. Update by name. A copy downloaded again ("name (1).pdf") replaces the older version in
+// the update sections; it is the arrival in Drive that counts, even when the file's own date is old.
+const v1 = mkFile('karras_yawmi_1AM.pdf', 'V1');
+drive.YAWMI.files.push(v1);
+sync();
+assert.equal(repoFiles().get('docs/yawmi/karras_yawmi_1AM.pdf'), gitSha(v1.buf));
+const v2 = mkFile('karras_yawmi_1AM (1).pdf', 'V2', { updated: 5 }); // uploaded later, older modified date
+drive.YAWMI.files.push(v2);
+sync();
+assert.equal(gh.commits.get(gh.head).message, 'Drive sync: 0 added, 1 updated, 0 removed');
+assert.equal(repoFiles().get('docs/yawmi/karras_yawmi_1AM.pdf'), gitSha(v2.buf));
+assert.equal([...repoFiles().keys()].filter((p) => p.startsWith('docs/yawmi/')).length, 1, 'no second file beside it');
+// Replaced in place (same Drive file, new content).
+v2.buf = Buffer.from('V3');
+v2.updated = ++clock;
+sync();
+assert.equal(gh.commits.get(gh.head).message, 'Drive sync: 0 added, 1 updated, 0 removed');
+assert.equal(repoFiles().get('docs/yawmi/karras_yawmi_1AM.pdf'), gitSha(v2.buf));
+// In the gradebook the name is kept exactly: "(1)" and "(2)" are two different assessments.
+const g1 = mkFile('الفرض (1).pdf', 'G1');
+const g2 = mkFile('الفرض (2).pdf', 'G2');
+sub.files.push(g1, g2);
+sync();
+assert.equal(gh.commits.get(gh.head).message, 'Drive sync: 2 added, 0 updated, 0 removed');
+assert.equal(repoFiles().get('docs/tanqit/1م1/الفرض (1).pdf'), gitSha(g1.buf));
+assert.equal(repoFiles().get('docs/tanqit/1م1/الفرض (2).pdf'), gitSha(g2.buf));
+console.log('ok  update by name; exact names in the gradebook');
+
 // 9. Empty Drive listing never wipes the site.
-const saved = [drive.NOSOS.files, drive.TANQIT.folders, drive.MOKH.files];
-drive.NOSOS.files = []; drive.TANQIT.folders = []; drive.MOKH.files = [];
+const saved = [drive.NOSOS.files, drive.TANQIT.folders, drive.MOKH.files, drive.YAWMI.files];
+drive.NOSOS.files = []; drive.TANQIT.folders = []; drive.MOKH.files = []; drive.YAWMI.files = [];
 const count = repoFiles().size;
 const msg = sync();
 assert.deepEqual(writes(), []);
 assert.equal(repoFiles().size, count);
 assert.match(msg, /nothing was removed/);
-[drive.NOSOS.files, drive.TANQIT.folders, drive.MOKH.files] = saved;
+[drive.NOSOS.files, drive.TANQIT.folders, drive.MOKH.files, drive.YAWMI.files] = saved;
 console.log('ok  empty Drive: nothing removed');
 
 // 10. A trashed section folder or a missing token stops the run before any write.

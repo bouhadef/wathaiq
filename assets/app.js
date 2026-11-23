@@ -14,6 +14,13 @@ const formatDate = (iso) => {
 };
 const urlFor = (path) => path.split('/').map(encodeURIComponent).join('/');
 
+// The title shown for a file: an Arabic one when its name follows a known pattern (config.titleRules).
+function displayTitle(f) {
+  const name = f.path.split('/').pop().replace(/\.pdf$/i, '');
+  for (const [pattern, title] of config.titleRules ?? []) if (pattern.test(name)) return name.replace(pattern, title);
+  return f.title;
+}
+
 function el(tag, props = {}, ...children) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(props)) {
@@ -35,7 +42,12 @@ async function loadIndex() {
     const res = await fetch('files.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(String(res.status));
     index = await res.json();
-    for (const s of index.sections) for (const g of s.groups) for (const f of g.files) allowed.set(f.path, { file: f, sectionId: s.id });
+    for (const s of index.sections)
+      for (const g of s.groups)
+        for (const f of g.files) {
+          f.title = displayTitle(f);
+          allowed.set(f.path, { file: f, sectionId: s.id });
+        }
   } catch {
     index = null;
   }
