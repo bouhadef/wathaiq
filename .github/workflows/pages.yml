@@ -31,7 +31,7 @@ jobs:
       - name: Assemble _site
         run: |
           mkdir _site
-          cp -r index.html assets vendor docs files.json robots.txt _site/
+          cp -r index.html qr.html assets vendor docs files.json robots.txt _site/
           find _site/docs -name .gitkeep -delete
       - uses: actions/upload-pages-artifact@v5
         with:

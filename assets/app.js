@@ -311,6 +311,13 @@ function route() {
   window.scrollTo(0, 0);
   let m;
   if ((m = hash.match(/^#\/s\/([^/]+)$/))) return renderSection(decodeURIComponent(m[1]));
+  // Short address from a printed QR code. If its file is gone, show its section rather than an error.
+  if ((m = hash.match(/^#\/d\/([\w-]+)$/))) {
+    const target = config.shortLinks?.[m[1]];
+    if (target && (!index || allowed.has(target.path))) return renderViewer(target.path);
+    const section = target?.path.split('/')[1];
+    return section && sectionConf(section) ? renderSection(section) : renderHome();
+  }
   if ((m = hash.match(/^#\/v\/(.+)$/))) {
     let path = '';
     try {

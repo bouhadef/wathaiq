@@ -1,0 +1,35 @@
+/* Printable QR sheets (qr.html). Everything on a sheet is sized in millimetres. */
+@page { size: A4; margin: 0; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: #e9ecf1; color: #000; font-family: 'Segoe UI', Tahoma, 'Noto Naskh Arabic', Arial, sans-serif; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 16px; background: #fff; border-block-end: 1px solid #d5dae2; }
+.toolbar p { margin: 0; font-size: 15px; }
+.toolbar button { min-height: 44px; padding-inline: 24px; font: inherit; font-weight: 700; color: #fff; background: #1d4e89; border: 0; border-radius: 8px; cursor: pointer; }
+
+.sheet { width: 210mm; height: 297mm; margin: 6mm auto; background: #fff; overflow: hidden; break-after: page; }
+
+/* 60 stickers: 6 columns x 10 rows, each 32.3 x 28 mm. */
+.stickers { display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(10, 1fr); padding: 8.5mm 8mm; }
+.sticker { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3mm; min-width: 0; color: #000; text-decoration: none; outline: 0.15mm dashed #9aa3af; outline-offset: -0.075mm; }
+.sticker svg { width: 19.5mm; height: 19.5mm; flex: none; }
+.sticker .label { font-size: 2.9mm; font-weight: 700; line-height: 1.15; }
+.sticker .sub { font-size: 2.3mm; line-height: 1.15; white-space: nowrap; }
+
+/* One large code on a page. The dashed frame is a cutting guide. */
+.poster { display: flex; align-items: center; justify-content: center; }
+.card { display: flex; flex-direction: column; align-items: center; gap: 3mm; width: 150mm; padding: 10mm 8mm; color: #000; text-decoration: none; outline: 0.2mm dashed #9aa3af; }
+.card svg { width: 110mm; height: 110mm; }
+.poster-title { font-size: 13mm; font-weight: 700; line-height: 1.2; }
+.poster-sub { font-size: 4.6mm; }
+.card .label { font-size: 7mm; font-weight: 700; }
+.card .hint { font-size: 4.6mm; }
+.card .url { font-size: 3.4mm; font-family: Consolas, 'Courier New', monospace; }
+
+@media print {
+  body { background: #fff; }
+  .toolbar { display: none; }
+  .sheet { margin: 0; }
+}
