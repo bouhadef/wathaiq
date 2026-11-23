@@ -14,12 +14,11 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+# Two jobs on purpose: deploying in the same job right after the upload sometimes failed with
+# 'No artifacts named "github-pages" were found' (the artifact was not listed yet).
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -37,5 +36,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v5
